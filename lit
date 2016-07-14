@@ -1,5 +1,19 @@
 #!/usr/bin/python
 
+# I put the following function in my .bash_profile
+# It looks for a (maybe empty?) .lit file in your repo.
+# If it finds that file, it forwards your args on to lit, which then sends them 
+# back to git if everything looks ok.
+
+#function git() {
+#    ROOT_DIR=$(/usr/bin/git rev-parse --show-toplevel)
+#    if [ ! -f ${ROOT_DIR}/.lit ]; then
+#        /usr/bin/git "$@"
+#    else
+#        echo "DONT DO THAT: USE LIT"
+#    fi
+#}
+
 import getpass
 import re
 import subprocess
