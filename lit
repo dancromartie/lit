@@ -1,0 +1,86 @@
+#!/usr/bin/python
+
+import getpass
+import re
+import subprocess
+import sys
+
+
+def call_output_to_lines(call_output):
+    output_lines = call_output.strip().split("\n")
+    clean_lines = [x.strip() for x in output_lines]
+    return clean_lines
+
+
+def get_repo_root():
+    root_dir_output = subprocess.check_output(
+        ["git",  "rev-parse", "--show-toplevel"])
+    root_dir = root_dir_output.strip()
+    return root_dir
+
+
+def list_files():
+    call_output = subprocess.check_output(["git", "ls-files"])
+    return call_output_to_lines(call_output)
+
+
+def list_branches():
+    call_output = subprocess.check_output(["git", "branch"])
+    branches = call_output_to_lines(call_output)
+    clean_branches = [x.replace("* ", "") for x in branches]
+    return clean_branches
+
+
+def validate_branch(args):
+    username = getpass.getuser()
+    personal_branch = "%s/dev" % username
+    permitted_branches = [personal_branch, "master"]
+    if "-b" in args:
+        sys.exit("-b not allowed")
+    elif args[0] not in permitted_branches:
+        helpful_link = "http://stackoverflow.com/questions/610208/"
+        helpful_link += "how-to-retrieve-a-single-file-from-specific-revision-in-git"
+        sys.exit(
+            "expected one of %s.  If you want to see a file as of a particular commit, see: %s" % \
+                (permitted_branches, helpful_link)
+        )
+
+def validate_add(args):
+    for arg in args:
+        if arg in ["--all", "-a", "-u", "--update"]:
+            sys.exit("No nuclear adding!  Stage individually")
+
+
+def validate_tag(args):
+    joined = " ".join(args).strip()
+    print joined
+    if args:
+        pattern = "^-a [vr]\d+.\d+.\d+ -m version [vr]\d+.\d+.\d+$"
+        if not re.match(pattern, joined):
+            sys.exit("Tag options (excluding quotes) need to follow pattern %s" % pattern)
+        version_matches = set(re.findall("[vr]\d+.\d+.\d+", joined))
+        if len(version_matches) > 1:
+            sys.exit("Version strings should match both in tag name and message")
+
+
+def validate_merge(args):
+    sys.exit("Merging not allowed.  Do it through pull requests. And merge on the remote.")
+        
+
+def main():
+    command = sys.argv[1]
+    if command == "branch":
+        validate_branch(sys.argv[2:])
+    elif command == "checkout":
+        validate_branch(sys.argv[2:])
+    elif command == "add":
+        validate_add(sys.argv[2:])
+    elif command == "merge":
+        validate_merge(sys.argv[2:])
+    elif command == "tag":
+        validate_tag(sys.argv[2:])
+
+    subprocess.call(["git"] + sys.argv[1:])
+
+if __name__ == "__main__":
+    main()
